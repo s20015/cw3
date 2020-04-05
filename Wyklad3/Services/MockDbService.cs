@@ -12,9 +12,51 @@ namespace Wyklad3.Services
             new Student{IdStudent=3, FirstName="Krzysztof", LastName="Andrzejewicz", IndexNumber="s5432"}
         };
 
+        public void CreateStudent(Student student)
+        {
+            var existingStudent = ((List<Student>)_students).Find(s => s.IdStudent == student.IdStudent);
+            if (existingStudent != null)
+            {
+                throw new StudentIdAlseadyExistsException();
+            }
+
+            ((List<Student>)_students).Add(student);
+        }
+
         public IEnumerable<Student> GetStudents()
         {
             return _students;
+        }
+
+        public void UpdateStudent(Student student)
+        {
+            var idx = ((List<Student>)_students).FindIndex(s => s.IdStudent == student.IdStudent);
+            if (idx == -1)
+            {
+                throw new StudentNotFoundException();
+            }
+
+            ((List<Student>)_students)[idx] = student;
+        }
+
+        void IDbService.DeleteStudent(int id)
+        {
+            var num = ((List<Student>)_students).RemoveAll(s => s.IdStudent == id);
+
+            if (num == 0) {
+                throw new StudentNotFoundException();
+            }
+        }
+
+        Student IDbService.GetStudent(int id)
+        {
+            var student = ((List<Student>)_students).Find(s => s.IdStudent == id);
+            if (student == null)
+            {
+                throw new StudentNotFoundException();
+            }
+
+            return student;
         }
     }
 }

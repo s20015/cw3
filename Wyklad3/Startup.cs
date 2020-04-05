@@ -29,7 +29,7 @@ namespace Wyklad3
             //Ninject
             //Autofac
             //...
-            services.AddTransient<IDbService, OracleDbService>();
+            services.AddTransient<IDbService, MockDbService>();
             services.AddControllers();
         }
 

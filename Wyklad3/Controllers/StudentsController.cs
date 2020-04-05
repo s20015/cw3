@@ -19,14 +19,22 @@ namespace Wyklad3.Controllers
 
         //2. QueryString
         [HttpGet]
-        public IActionResult GetStudents([FromServices]IDbService service, [FromQuery]string orderBy)
+        public IActionResult GetStudents([FromQuery]string orderBy)
         {
-            if (orderBy == "lastname")
+            Type studentType = typeof(Student);
+
+            if (orderBy != null && studentType.GetProperty(orderBy) == null)
             {
-                return Ok(_dbService.GetStudents().OrderBy(s => s.LastName));
+                return BadRequest("wrong orderBy parameter");
             }
 
-            return Ok(_dbService.GetStudents());
+            if (orderBy == "" || orderBy == null)
+            {
+                return Ok(_dbService.GetStudents());
+            }
+
+            // orderBy parameters should excactly match parametes in response ( IdStudent != idStudent )
+            return Ok(_dbService.GetStudents().OrderBy(s => s.GetType().GetProperty(orderBy).GetValue(s)));
         }
 
         //[FromRoute], [FromBody], [FromQuery]
@@ -34,23 +42,64 @@ namespace Wyklad3.Controllers
         [HttpGet("{id}")]
         public IActionResult GetStudent([FromRoute]int id) //action method
         {
-            if (id == 1)
+            try
             {
-                return Ok("Jan");
+                return Ok(_dbService.GetStudent(id));
+            }
+            catch (StudentNotFoundException)
+            {
+                return NotFound("Student was not found");
             }
 
-            return NotFound("Student was not found");
         }
 
         //3. Body - cialo zadan
         [HttpPost]
         public IActionResult CreateStudent([FromBody]Student student)
         {
-            student.IndexNumber=$"s{new Random().Next(1, 20000)}";
-            //...
+            try
+            {
+                _dbService.CreateStudent(student);
+
+            } catch (StudentIdAlseadyExistsException)
+            {
+                return BadRequest("Student with this id already exists");
+            }
+
             return Ok(student); //JSON
         }
 
 
+        [HttpPut("{id}")]
+        public IActionResult UpdateStudent([FromRoute] int id, [FromBody]Student student)
+        {
+            if ( id != student.IdStudent)
+            {
+                return BadRequest("Changing id is forbidden");
+            }
+
+            try {
+                _dbService.UpdateStudent(student);
+            } catch (StudentNotFoundException)
+            {
+                return NotFound("Student was not found");
+            }
+
+            return Ok("Student updated");
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult DeleteStudent([FromRoute]int id)
+        {
+            try
+            {
+                _dbService.DeleteStudent(id);
+                return Ok("Student deleted");
+            }
+            catch (StudentNotFoundException)
+            {
+                return NotFound("Student was not found");
+            }
+        }
     }
 }
