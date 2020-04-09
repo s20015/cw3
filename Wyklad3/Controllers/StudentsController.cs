@@ -3,6 +3,9 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Wyklad3.Models;
 using Wyklad3.Services;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+
 
 namespace Wyklad3.Controllers
 {
@@ -100,6 +103,45 @@ namespace Wyklad3.Controllers
             {
                 return NotFound("Student was not found");
             }
+        }
+
+        //[FromRoute], [FromBody], [FromQuery]
+        //1. URL segment
+        [HttpGet("{id}/enrollments")]
+        public IActionResult GetStudentEnrollments([FromRoute]int id) //action method
+        {
+            var enrollments = new List<Enrollment>();
+            // Should have dedicated DAL/repository (just like students), should have error handling
+            string conString = "Data Source=db-mssql;Initial Catalog=s20015;Integrated Security=True";
+            using (var con = new SqlConnection(conString))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+                com.CommandText = @"select Enrollment.IdEnrollment, Semester, StartDate, Studies.IdStudy, Name from Enrollment
+                                    join Student on Student.IdEnrollment = Enrollment.IdEnrollment
+                                    join Studies on Enrollment.IdStudy = Studies.IdStudy
+                                    where Student.IndexNumber = @id;";
+                com.Parameters.AddWithValue("id", id);
+
+                con.Open();
+                var r = com.ExecuteReader();
+                while (r.Read())
+                {
+                    var enrollment = new Enrollment();
+                    enrollment.IdEnrollment = r.GetInt32(r.GetOrdinal("IdEnrollment"));
+                    enrollment.Semester = r.GetInt32(r.GetOrdinal("Semester"));
+                    enrollment.StartDate = r.GetDateTime(r.GetOrdinal("StartDate"));
+
+                    var study = new Study();
+                    study.IdStudy = r.GetInt32(r.GetOrdinal("IdStudy"));
+                    study.Name = r.GetString(r.GetOrdinal("Name"));
+
+                    enrollment.Study = study;
+
+                    enrollments.Add(enrollment);
+                }
+            }
+            return Ok(enrollments);
         }
     }
 }
