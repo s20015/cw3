@@ -30,6 +30,7 @@ namespace Wyklad3
             //Autofac
             //...
             services.AddTransient<IDbService, SQLServerDBService>();
+            services.AddTransient<IStudentBbService, SqlServerStudentDbService>();
             services.AddControllers();
         }
 
