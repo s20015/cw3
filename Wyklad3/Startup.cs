@@ -4,11 +4,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Wyklad3.Middlewares;
 using Wyklad3.Services;
 
 namespace Wyklad3
@@ -35,19 +37,29 @@ namespace Wyklad3
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IStudentBbService dbService)
         {
             app.UseDeveloperExceptionPage();
 
             app.UseRouting();
 
-            //Doklejal do odpowiedzi naglowek http
-            app.Use(async (context, c) =>
-            {
-                context.Response.Headers.Add("Secret", "1234");
-                await c.Invoke();
+            app.Use(async (context, next) => {
+                var indexHeaders = context.Request.Headers["Index"];
+                if (!indexHeaders.Any())
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsync("Unauthorized");
+                    return;
+                }
+                if (!dbService.IsValidStudent(indexHeaders.First())) {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsync("Unauthorized");
+                    return;
+                }
+                await next();
             });
-            app.UseMiddleware<CustomMiddleware>();
+
+            app.UseMiddleware<LoggingMiddleware>();
 
             app.UseAuthorization();
 

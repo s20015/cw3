@@ -108,6 +108,36 @@ namespace Wyklad3.Services
 
             }
         }
+
+        public bool IsValidStudent(string index)
+        {
+            using (var con = new SqlConnection(conString))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+                con.Open();
+
+                try
+                {
+                    com.CommandText = "select IndexNumber from Student where IndexNumber = @index";
+                    com.Parameters.AddWithValue("index", index);
+
+                    var r = com.ExecuteReader();
+                    if (!r.Read())
+                    {
+                        return false;
+                    } else
+                    {
+                        return true;
+                    }
+                }
+                catch (SqlException exc)
+                {
+                    throw new InternalError(exc.Message);
+                }
+            }
+        }
+
         public void PromoteStudents(int semester, string studies)
         {
             using (var con = new SqlConnection(conString))

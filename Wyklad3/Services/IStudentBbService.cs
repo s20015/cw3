@@ -11,5 +11,6 @@ namespace Wyklad3.Services
     {
         void EnrollStudent(EnrollmentRequest request);
         void PromoteStudents(int semester, string studies);
+        bool IsValidStudent(string index);
     }
 }
