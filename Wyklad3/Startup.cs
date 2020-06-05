@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -10,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Wyklad3.Middlewares;
 using Wyklad3.Services;
 
@@ -31,6 +34,21 @@ namespace Wyklad3
             //Ninject
             //Autofac
             //...
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateLifetime = true,
+                        ValidateAudience = true,
+                        ValidIssuer = "Gakko",
+                        ValidAudience = "Students",
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["SecretKey"]))
+                    };
+                });
+
             services.AddTransient<IDbService, SQLServerDBService>();
             services.AddTransient<IStudentBbService, SqlServerStudentDbService>();
             services.AddControllers();
@@ -43,23 +61,23 @@ namespace Wyklad3
 
             app.UseRouting();
 
-            app.Use(async (context, next) => {
-                var indexHeaders = context.Request.Headers["Index"];
-                if (!indexHeaders.Any())
-                {
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    await context.Response.WriteAsync("Unauthorized");
-                    return;
-                }
-                if (!dbService.IsValidStudent(indexHeaders.First())) {
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    await context.Response.WriteAsync("Unauthorized");
-                    return;
-                }
-                await next();
-            });
+            //app.Use(async (context, next) => {
+            //    var indexHeaders = context.Request.Headers["Index"];
+            //    if (!indexHeaders.Any())
+            //    {
+            //        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            //        await context.Response.WriteAsync("Unauthorized");
+            //        return;
+            //    }
+            //    if (!dbService.IsValidStudent(indexHeaders.First())) {
+            //        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            //        await context.Response.WriteAsync("Unauthorized");
+            //        return;
+            //    }
+            //    await next();
+            //});
 
-            app.UseMiddleware<LoggingMiddleware>();
+            //app.UseMiddleware<LoggingMiddleware>();
 
             app.UseAuthorization();
 

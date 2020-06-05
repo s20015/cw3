@@ -5,7 +5,12 @@ using Wyklad3.Models;
 using Wyklad3.Services;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-
+using Wyklad3.DTOs;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.Extensions.Configuration;
 
 namespace Wyklad3.Controllers
 {
@@ -13,6 +18,7 @@ namespace Wyklad3.Controllers
     [ApiController]
     public class StudentsController : ControllerBase
     {
+        public IConfiguration Configuration { get; set; }
         private IDbService _dbService;
 
         public StudentsController(IDbService service)

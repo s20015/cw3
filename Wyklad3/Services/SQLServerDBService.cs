@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Wyklad3.Models;
 using System.Data.SqlClient;
+using Wyklad3.DTOs;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
 namespace Wyklad3.Services
 {
@@ -69,6 +71,105 @@ namespace Wyklad3.Services
         public void UpdateStudent(Student student)
         {
             throw new NotImplementedException();
+        }
+
+        // salt should be stored next to password hash in db, simplified solution here
+        public bool AreCredentialsValid(LoginRequest request, byte[] salt)
+        {
+            string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password: request.Password,
+                salt: salt,
+                prf: KeyDerivationPrf.HMACSHA1,
+                iterationCount: 10000,
+                numBytesRequested: 256 / 8));
+
+            using (var con = new SqlConnection(conString))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+                con.Open();
+
+                try
+                {
+                    com.CommandText = "select IndexNumber from Student where IndexNumber = @index and Password = @password";
+                    com.Parameters.AddWithValue("index", request.Login);
+                    com.Parameters.AddWithValue("password", hashed);
+
+                    var r = com.ExecuteReader();
+                    if (!r.Read())
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                catch (SqlException exc)
+                {
+                    throw new InternalError(exc.Message);
+                }
+            }
+        }
+
+        public void SetNewRefreshToken(string login, string refreshToken)
+        {
+            using (var con = new SqlConnection(conString))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+                con.Open();
+
+
+                try
+                {
+                    com.CommandText = "update Student set RefreshToken = @token where IndexNumber = @index";
+                    com.Parameters.AddWithValue("token", refreshToken);
+                    com.Parameters.AddWithValue("index", login);
+
+                    com.ExecuteNonQuery();
+                }
+                catch (SqlException exc)
+                {
+                    throw new InternalError(exc.Message);
+                }
+            }
+        }
+
+        public Student GetStudentByRefreshToken(string refreshToken)
+        {
+            using (var con = new SqlConnection(conString))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+                con.Open();
+
+                try
+                {
+                    com.CommandText = @"select IndexNumber, FirstName, LastName, BirthDate from Student where RefreshToken = @token";
+                    com.Parameters.AddWithValue("token", refreshToken);
+
+                    var r = com.ExecuteReader();
+                    if (!r.Read())
+                    {
+                        throw new StudentNotFoundException();
+                    }
+                    else
+                    {
+                        var student = new Student();
+                        student.IndexNumber = r.GetString(r.GetOrdinal("IndexNumber"));
+                        student.FirstName = r.GetString(r.GetOrdinal("FirstName"));
+                        student.LastName = r.GetString(r.GetOrdinal("LastName"));
+                        student.BirthDate = r.GetDateTime(r.GetOrdinal("BirthDate"));
+
+                        return student;
+                    }
+                }
+                catch (SqlException exc)
+                {
+                    throw new InternalError(exc.Message);
+                }
+            }
         }
     }
 }

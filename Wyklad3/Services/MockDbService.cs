@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Wyklad3.DTOs;
 using Wyklad3.Models;
 
 namespace Wyklad3.Services
@@ -12,6 +13,16 @@ namespace Wyklad3.Services
             new Student{IdStudent=3, FirstName="Krzysztof", LastName="Andrzejewicz", IndexNumber="s5432"}
         };
 
+        public bool AreCredentialsValid(LoginRequest request)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public bool AreCredentialsValid(LoginRequest request, byte[] salt)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public void CreateStudent(Student student)
         {
             var existingStudent = ((List<Student>)_students).Find(s => s.IdStudent == student.IdStudent);
@@ -23,9 +34,19 @@ namespace Wyklad3.Services
             ((List<Student>)_students).Add(student);
         }
 
+        public Student GetStudentByRefreshToken(string refreshToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public IEnumerable<Student> GetStudents()
         {
             return _students;
+        }
+
+        public void SetNewRefreshToken(string login, string refreshToken)
+        {
+            throw new System.NotImplementedException();
         }
 
         public void UpdateStudent(Student student)

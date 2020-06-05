@@ -8,6 +8,7 @@ using System.Data.SqlClient;
 using System.Diagnostics.CodeAnalysis;
 using Wyklad3.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Wyklad3.Controllers
 {
@@ -22,6 +23,7 @@ namespace Wyklad3.Controllers
             _service = service;
         }
 
+        [Authorize(Roles = "student")]
         [HttpPost]
         public IActionResult CreateEnrollment([FromBody]EnrollmentRequest request)
         {
@@ -52,6 +54,7 @@ namespace Wyklad3.Controllers
             return Ok(resp);
         }
 
+        [Authorize(Roles = "employee")]
         [HttpPost("promotions")]
         public IActionResult Promote([FromBody] Promotion request)
         {
